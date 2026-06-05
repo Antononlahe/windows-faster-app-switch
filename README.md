@@ -23,19 +23,22 @@ Windows SDK, and it compiles to a tiny standalone `.exe`.
   windows, cloaked/virtual-desktop windows, and untitled windows).
 - **Reliable foreground switching** — uses the `AttachThreadInput` trick to
   reliably bring the chosen window to the front, even from a background app.
+- **System tray icon** — runs quietly in the notification area; left-click to
+  open the palette, right-click for a menu to open it or **Exit**.
 - **Lightweight** — no installer, no background services, no telemetry. Just
   one small executable.
 
 ## Usage
 
-1. Run `winswitch.exe`. It runs silently in the background (no window or tray
-   icon until invoked).
-2. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>.
+1. Run `winswitch.exe`. It runs in the background with an icon in the system
+   tray (notification area).
+2. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd> (or left-click the
+   tray icon).
 3. Type to filter your open windows.
 4. Use <kbd>↑</kbd>/<kbd>↓</kbd> to select and <kbd>Enter</kbd> to switch.
    Press <kbd>Esc</kbd> (or click away) to dismiss without switching.
 
-To exit WinSwitch, end the `winswitch.exe` process from Task Manager.
+**To quit**, right-click the tray icon and choose **Exit**.
 
 ### Start automatically with Windows
 
