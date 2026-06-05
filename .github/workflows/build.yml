@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Compile
+        shell: cmd
+        run: cl /EHsc /O2 /W3 /DUNICODE /D_UNICODE winswitch.cpp /Fe:winswitch.exe /link /SUBSYSTEM:WINDOWS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: winswitch-exe
+          path: winswitch.exe
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: winswitch.exe

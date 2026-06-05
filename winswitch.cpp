@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dwmapi.h>
+#include <shellapi.h>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -8,12 +9,17 @@
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "shell32.lib")
 
 #ifndef DWMWA_CLOAKED
 #define DWMWA_CLOAKED 14
 #endif
 
 #define HOTKEY_ID 1
+#define TRAY_UID 1
+#define WM_TRAYICON (WM_APP + 1)
+#define IDM_OPEN 1001
+#define IDM_EXIT 1002
 
 struct WindowEntry {
     HWND hwnd;
@@ -26,6 +32,7 @@ static std::vector<int> g_filtered;
 static HWND g_main = nullptr, g_edit = nullptr, g_list = nullptr;
 static WNDPROC g_editProc = nullptr;
 static HFONT g_font = nullptr;
+static NOTIFYICONDATAW g_nid = {};
 
 static bool IsAltTabWindow(HWND hwnd) {
     if (!IsWindowVisible(hwnd)) return false;
@@ -181,13 +188,57 @@ static void LayoutChildren(int width, int height) {
     MoveWindow(g_list, pad, listTop, width - 2 * pad, height - listTop - pad, TRUE);
 }
 
+static void AddTrayIcon() {
+    g_nid.cbSize = sizeof(g_nid);
+    g_nid.hWnd = g_main;
+    g_nid.uID = TRAY_UID;
+    g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    g_nid.uCallbackMessage = WM_TRAYICON;
+    g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    wcscpy_s(g_nid.szTip, L"WinSwitch — Ctrl+Alt+Space");
+    Shell_NotifyIconW(NIM_ADD, &g_nid);
+}
+
+static void RemoveTrayIcon() {
+    Shell_NotifyIconW(NIM_DELETE, &g_nid);
+}
+
+static void ShowTrayMenu() {
+    POINT pt;
+    GetCursorPos(&pt);
+
+    HMENU menu = CreatePopupMenu();
+    AppendMenuW(menu, MF_STRING, IDM_OPEN, L"Open (Ctrl+Alt+Space)");
+    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Exit");
+
+    // Required so the menu dismisses when the user clicks elsewhere.
+    SetForegroundWindow(g_main);
+    TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_BOTTOMALIGN,
+                   pt.x, pt.y, 0, g_main, nullptr);
+    DestroyMenu(menu);
+}
+
 static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM w, LPARAM l) {
     switch (msg) {
         case WM_HOTKEY:
             if (w == HOTKEY_ID) ShowPalette();
             return 0;
 
+        case WM_TRAYICON:
+            if (LOWORD(l) == WM_LBUTTONUP || LOWORD(l) == WM_LBUTTONDBLCLK) {
+                ShowPalette();
+            } else if (LOWORD(l) == WM_RBUTTONUP || LOWORD(l) == WM_CONTEXTMENU) {
+                ShowTrayMenu();
+            }
+            return 0;
+
         case WM_COMMAND:
+            if (l == 0) {
+                if (LOWORD(w) == IDM_OPEN) ShowPalette();
+                else if (LOWORD(w) == IDM_EXIT) DestroyWindow(g_main);
+                return 0;
+            }
             if ((HWND)l == g_edit && HIWORD(w) == EN_CHANGE) Refilter();
             if ((HWND)l == g_list && HIWORD(w) == LBN_DBLCLK) ActivateSelected();
             return 0;
@@ -201,6 +252,7 @@ static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM w, LPARAM l) {
             return 0;
 
         case WM_DESTROY:
+            RemoveTrayIcon();
             UnregisterHotKey(g_main, HOTKEY_ID);
             PostQuitMessage(0);
             return 0;
@@ -250,6 +302,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, LPWSTR, int) {
     if (!RegisterHotKey(g_main, HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_SPACE)) {
         MessageBoxW(g_main, L"Could not register Ctrl+Alt+Space hotkey.", L"WinSwitch", MB_OK);
     }
+
+    AddTrayIcon();
 
     MSG m;
     while (GetMessage(&m, nullptr, 0, 0)) {
