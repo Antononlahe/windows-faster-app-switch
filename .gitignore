@@ -1,0 +1,14 @@
+# Build artifacts
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.res
+
+# Editor / IDE
+.vs/
+.vscode/
+*.user
