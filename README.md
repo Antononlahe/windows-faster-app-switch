@@ -9,6 +9,13 @@ Windows SDK, and it compiles to a tiny standalone `.exe`.
 
 ![hotkey: Ctrl+Alt+Space](https://img.shields.io/badge/hotkey-Ctrl%2BAlt%2BSpace-blue)
 
+## Screenshots
+
+Looks ugly as sin but works for me.
+
+![WinSwitch palette](screenshots/example_1.jpg)
+![WinSwitch palette filtering](screenshots/example_2.jpg)
+
 ## Features
 
 - **Global hotkey** — <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd> pops up
