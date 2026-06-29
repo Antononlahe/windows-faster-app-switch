@@ -194,7 +194,9 @@ static void AddTrayIcon() {
     g_nid.uID = TRAY_UID;
     g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAYICON;
-    g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    // Retro race-car icon from the classic Win9x PIF manager (index 27).
+    g_nid.hIcon = ExtractIconW(GetModuleHandleW(nullptr), L"pifmgr.dll", 27);
+    if (!g_nid.hIcon) g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION); // ponytail: fallback if DLL/index missing
     wcscpy_s(g_nid.szTip, L"WinSwitch — Ctrl+Alt+Space");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 }
